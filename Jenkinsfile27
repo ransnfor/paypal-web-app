@@ -1,0 +1,69 @@
+pipeline{
+  agent any 
+  tools{
+    maven "3.8.4"
+  }
+  stages{
+    stage('1.clone'){
+      steps{
+            sh "echo clonning the latest version of the code" 
+            git branch: 'ranis', credentialsId: 'GitHub', url: 'https://github.com/ransnfor/paypal-web-app.git'
+            sh "echo clonning successful"
+
+      }
+    }
+    stage('2.Build'){
+      steps{
+        sh "echo validation, compilation, testing and package"
+        sh "echo testing successful and ready to package"
+        sh "mvn clean package"
+      }
+    }
+    stage('4.uploadArtifacts'){
+      steps{
+        sh "mvn deploy"
+      }
+    }
+    stage('5.Deploy2UAT'){
+      steps{
+        sh "echo deploying to UAT for further testing and validation"
+        sshagent(['agent']) {
+        sh "scp -o StrictHostKeyChecking=no target/*.war ec2-user@172.31.82.54:/opt/tomcat9/webapps/uatapp.war"
+      }
+    }
+  }
+  stage('6.Deploy2Prod'){
+      steps{
+        sh "echo DEPLOYING application TO Production"
+        timeout(time:8, unit:'HOURS'){
+        input message: 'Please approve deployment to Production'
+      }
+        sshagent(['agent']) {
+        sh "scp -o StrictHostKeyChecking=no target/*.war ec2-user@172.31.82.54:/opt/tomcat9/webapps/app.war"
+      }
+    }
+  }
+  }
+  post{
+    always{
+      emailext body: '''Good news,
+The package has been deployed
+
+Regards,
+Ransome''', recipientProviders: [developers()], subject: 'Success', to: 'nforransome92@gmail.com'
+    }
+    success{
+      emailext body: '''Good news,
+The package has been deployed
+
+Regards,
+Ransome''', recipientProviders: [developers()], subject: 'Success', to: 'nforransome92@gmail.com'
+    }
+    failure{
+      emailext body: '''Hey team
+We have a failure, please re-take a look.
+Regards,
+Ransome''', recipientProviders: [developers()], subject: 'failure', to: 'nforransome92@gmail.com'
+    }
+  }
+}
