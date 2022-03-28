@@ -7,7 +7,7 @@ pipeline{
     stage('1.clone'){
       steps{
             sh "echo clonning the latest version of the code" 
-            git branch: 'ranis', credentialsId: 'GitHub', url: 'https://github.com/ransnfor/paypal-web-app.git'
+            git branch: 'master', credentialsId: 'GitHub', url: 'https://github.com/ransnfor/paypal-web-app.git'
             sh "echo clonning successful"
 
       }
